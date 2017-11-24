@@ -88,7 +88,7 @@ def clearText(event): # clear the text "Type your message here"
       entryMessage.delete(0,END)
 
 def OnDoubleClickNameList(event): # send invitation to chatter on the chatter list
-      print ("Sending your invitation to the chatter...")
+      global InvitedChatter
       InvitedChatter = Name
       inviteChatter = messagebox.askyesno("Invite Chatter","Invite to Play e-frog?")
 
@@ -104,9 +104,9 @@ def OnDoubleClickNameList(event): # send invitation to chatter on the chatter li
               foundMatchIpPort = foundMatchIpPort.replace('\'','')
               IpOnly = foundMatchIpPort.split(",")[0]
               #print(IpOnly)
-              uri="PYRO:daemonChatter@"+IpOnly+":4000" #Identify the Daemon
+              uri="PYRO:daemonGameStarter@"+IpOnly+":4000" #Identify the Daemon
               call=Pyro4.Proxy(uri)
-              x = call.ask_connection(host) #get free port of the host
+              x = call.ask_connection(host,alias) #get free port of the host and send player name
               if x: # if invited clicked yes
 
                   # if chatmate accept invitation then connect to it
@@ -115,7 +115,7 @@ def OnDoubleClickNameList(event): # send invitation to chatter on the chatter li
 
                   #create new window for Iconnect Only Connection- this should not call NewWindow func
                   #threading.Thread(target = iConnectNewWindow,args = (IpOnly,iConnect)).start() #run the dialog box to private chat
-                  threading.Thread(target = iConnect_StartGame,args = (IpOnly,iConnect)).start() #run the dialog box to private chat
+                  threading.Thread(target = iConnect_StartGame,args = (IpOnly,iConnect,InvitedChatter)).start() #run the dialog box to private chat
            
 def RunDaemon():
       daemon.requestLoop() # start the event loop of the RMI daemon server
@@ -132,7 +132,7 @@ def get_free_tcp_port():
 ##### I CONNECT START Frog Game Code as a single user #####
 
 
-def iConnect_StartGame(ip,sock):
+def iConnect_StartGame(ip,sock,InvitedOpponent):
 
         iConnect_sock = sock #My socket as the receiver CHECK EXER 3 REGARDING THIS... ICONNECT SECTION
         
@@ -224,8 +224,6 @@ def iConnect_StartGame(ip,sock):
               
             global opp_move_x_iconnect
             global opp_move_y_iconnect
-                
-                
 
             while 1:
                   try:
@@ -241,7 +239,7 @@ def iConnect_StartGame(ip,sock):
                       #opp_move_y = float(int_opp_move_y)
                       
                       #print ("Player 1 MCoordinate "+)
-                      print ("Get X "+str(opp_move_y_iconnect))
+                      #print ("Get X "+str(opp_move_y_iconnect))
                       #print ("Get Y "+int_opp_move_y)
                   except Exception as e:
                     print(e)
@@ -485,8 +483,8 @@ def iConnect_StartGame(ip,sock):
 
         # INITIALIZE SETTING
         camera = Camera()
-        blob = Player(surface,"Player1")
-        Opponent = Player(surface,"Player2")
+        blob = Player(surface,alias)
+        Opponent = Player(surface,InvitedOpponent)
         spawn_cells(1000)
 
        
@@ -545,10 +543,11 @@ def iConnect_StartGame(ip,sock):
 
 
 ##### START Frog Game Code as a single user #####
-def StartGame(ip,sock):
+def StartGame(ip,sock,OpponentNamePass):
 
 
         StartGame_sock = sock #socket as the receiver
+        OpponentName = OpponentNamePass
         time.sleep(2) #game start count down
 
         
@@ -644,7 +643,6 @@ def StartGame(ip,sock):
                 while 1:
                   try:
                     while 1:
-                      
                       data = OpponentPlayer.recv(2048) #listen to opponent player movement
                       #OpponentMouseCoordinate = str(data.decode('ascii'))
                       #print("Getting OPPONENT DATA from GameStarted of 2 def "+str(data.decode('ascii')))
@@ -657,7 +655,7 @@ def StartGame(ip,sock):
                       #opp_move_y = float(int_opp_move_y)
                       #print ("MCoordinate "+OpponentMouseCoordinate.split(",")[0])
                       #print ("Get X "+int_opp_move_x)
-                      print ("Get X "+str(opp_move_x_StartGame))
+                      print ("THIS iS RESULT of Get y "+str(opp_move_y_StartGame))
                   except Exception as e:
                     print(e)
 
@@ -905,8 +903,8 @@ def StartGame(ip,sock):
 
         # INITIALIZE SETTING
         camera = Camera()
-        blob = Player(surface,"Player1")
-        Opponent = Player(surface,"Player2")
+        blob = Player(surface,alias)
+        Opponent = Player(surface,OpponentName)
         spawn_cells(1000)
         #spawn_Enemy(1)
         spawn_venus_Cells(50) #venus playtrap numbers
@@ -1034,19 +1032,20 @@ print ("------------------------------------------------------------------")
 
 #PYRO4 for RMI
 @Pyro4.expose
-class ClientChatter():
-      def ask_connection(self,ip):
+class StartGame_As_Opponent():
+      def ask_connection(self,ip,OpponentNamePass):
         print("this is the ip"+ip)
+        OpponentName = OpponentNamePass
         if messagebox.askyesno("Accept","Accept invitation to join game?"):
                   global free_port
-                  global host	  
+                  global host
                   #Start the socket using TCP for private chat - this enables the chatmate to connect
                   new_sMine=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
                   #new_sMine.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)
                   new_sMine.bind((host,free_port)) ########### IP and Port of machine ##########
                   new_sMine.listen(5)
                   
-                  threading.Thread(target = StartGame,args = (ip,new_sMine)).start() #run the dialog box to private chat
+                  threading.Thread(target = StartGame,args = (ip,new_sMine,OpponentName)).start() #run the dialog box to private chat
 
                   return True, free_port
 
@@ -1054,7 +1053,7 @@ class ClientChatter():
                   return False
 
 daemon = Pyro4.Daemon(host=host, port=4000)                # make a Pyro daemon
-daemon.register(ClientChatter,"daemonChatter")   # register the greeting maker as a Pyro object
+daemon.register(StartGame_As_Opponent,"daemonGameStarter")   # register the greeting maker as a Pyro object
 
 rt = threading.Thread(target = ShowMsgFromServer,args = ("RecvThread",s))
 threading.Thread(target = RunDaemon).start() #run daemon loop
