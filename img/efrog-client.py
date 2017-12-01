@@ -1,6 +1,6 @@
 import socket
 import sys
-import time, random, math, ast
+import time, random, math
 import threading
 from threading import Timer
 from tkinter import *
@@ -23,10 +23,8 @@ def ShowMsgFromMe():  # display my message to the chat area
 def SendMsgToServer(): # send message to server
       #alias = "Client"
       global alias
-      
 
       Clientmessage = " is now connected to the game server"
-      print (alias)
       if (str(Clientmessage)!="" and str(Clientmessage)!="Type your message here..."):
         
         if (alias==""): #Need to input name of the user.
@@ -59,57 +57,47 @@ def ShowMsgFromServer(name,sock):
      global clients
      global Name
      global Cells_x
-     global Cells_y
-     global Cells_coord_arr
-     global Venus_x 
-     global Venus_y
-     global Venus_coord_arr
+     global Cells_y     
      
      while 1:
       try:
        while 1:
         data = s.recv(4096) #listen to server
         #ClientName = data.split(":")
+        print(data)
+        
         msg = str(data.decode('ascii')).strip()
         
-        #print("this is message from server with Coor "+msg)
-        
-        if "Cell_Coord:" in msg: #intercept message from server with Coord and strip to get coordinator for cells
-            msg = str(data.decode('ascii')).split(":")
-            Cells_coord = str(msg[1])
-            Cells_coord_arr = ast.literal_eval(Cells_coord)
-
-        elif "Venus_Coord:" in msg:    
-            msg = str(data.decode('ascii')).split(":")
-            Venus_coord = str(msg[1])
-            Venus_coord_arr = ast.literal_eval(Venus_coord)
-            print("Venus Coordinates: "+str(Venus_coord_arr))
+        if "Coord" in msg: #intercept message from server with Coord and strip to get coordinator for cells
+            Cells_x = float(msg.split(",")[1])
+            Cells_y = float(msg.split(",")[2])
+            print(str(Cells_x)+""+str(Cells_y))
         else:
 
-            msg = msg.split("-")[0]
+              msg = msg.split("-")[0]
                   
               #Put message on Chat area
-            Chatarea.config(state=NORMAL)
-            Chatarea.insert(INSERT, str(msg) + "\n")
-            Chatarea.config(state=DISABLED)
+              Chatarea.config(state=NORMAL)
+              Chatarea.insert(INSERT, str(msg) + "\n")
+              Chatarea.config(state=DISABLED)
 
-            Name = str(data.decode('ascii')).strip()
-            Name = Name.split(" is")[0]
-            ipPort = str(data.decode('ascii')).split("-")[1]
+              Name = str(data.decode('ascii')).strip()
+              Name = Name.split(" is")[0]
+              ipPort = str(data.decode('ascii')).split("-")[1]
               #print(ipPort)
-            clients = Name
+              clients = Name
 
               #THIS SHOULD RUN and display names of chatters to the List box
               #if clients not in allClients:
-            if allClients.get(Name) == None:
+              if allClients.get(Name) == None:
                 allClients[Name] = ipPort
 
                 if not Name == alias: # Should not display own name on the list
                       NameListArea.insert(1, Name) #PUT NAME ON THE LIST
                       NameListArea.bind("<Double-1>",OnDoubleClickNameList)
 
-      except: #except Exception as e:
-       pass #print(e)
+      except:
+       pass
 
 def clearText(event): # clear the text "Type your message here"
       entryMessage.delete(0,END)
@@ -176,7 +164,7 @@ def iConnect_StartGame(ip,sock,InvitedOpponent):
 
         colors_viruses = [(66,254,71)]
         screen_width, screen_height = (1200,800)
-        surface = pygame.display.set_mode((1280,655))
+        surface = pygame.display.set_mode((1200,800))
         #surface = pygame.display.set_mode((0,0), pygame.FULLSCREEN)
         t_surface = pygame.Surface((95,25),pygame.SRCALPHA) #transparent rect for score
         t_lb_surface = pygame.Surface((200,278),pygame.SRCALPHA) # WIDTH, HEIGHT of transparent rect for leaderboard box
@@ -228,7 +216,33 @@ def iConnect_StartGame(ip,sock,InvitedOpponent):
             return ((diffX**2)+(diffY**2))**(0.5)
 
 
+##### SEND GET ICONNECT DATA #######
+
+        def send_opponent_data_iConnect(name,sock): # send player data to chat mate
+
+                iConnect_sock = sock
+                global alias
+                global my_move_x
+                global my_move_y
+
+                #MyMove = "Helllooooo" #my_move_x,my_move_y
+
+                
+                while 1:
+                  try:
+                    while 1:
+                      my_move_x_str = str(my_move_x)
+                      my_move_y_str = str(my_move_y)
+                      #iConnect_sock.send(my_move_x_str.encode('ascii')+b","+ my_move_y_str.encode('ascii'))
+                      iConnect_sock.send(my_move_x_str.encode('ascii'))
+                      #print("Sending Data to Opponent from iConnect 1 "+MyMove)
+                      #print(my_move_x_str+","+my_move_y_str)
+                  except:
+                    pass
+
         def get_opponent_data_iConnect(name,sock):
+
+                #global iConnect_sock
               
             global opp_move_x_iconnect
             global opp_move_y_iconnect
@@ -241,13 +255,18 @@ def iConnect_StartGame(ip,sock,InvitedOpponent):
 
                       data = iConnect_sock.recv(2048) #listen to opponent player movement
                       #print("---------------------------------------------n")
-                      OpponentMouseCoordinate = str(data.decode('ascii')).split(",")
-                      opp_move_x_iconnect = float(OpponentMouseCoordinate[0])
-                      opp_move_y_iconnect = float(OpponentMouseCoordinate[1])
-                      opp_mass_iconnect = float(OpponentMouseCoordinate[2])
-                      opp_score_iconnect = OpponentMouseCoordinate[3]
+                      OpponentMouseCoordinate = str(data.decode('ascii')).strip()
+                      opp_move_x_iconnect = float(OpponentMouseCoordinate.split(",")[0])
+                      opp_move_y_iconnect = float(OpponentMouseCoordinate.split(",")[1])
+                      opp_mass_iconnect = float(OpponentMouseCoordinate.split(",")[2])
+                      opp_score_iconnect = OpponentMouseCoordinate.split(",")[3]
                       
-                      #print ("SCOOOOOOOOREEEEEEEEEEEEEEEEEEE "+str(OpponentMouseCoordinate))
+                      #opp_move_x = float(int_opp_move_x)
+                      #opp_move_y = float(int_opp_move_y)
+                      
+                      #print ("Player 1 MCoordinate "+)
+                      #print ("Get X "+str(opp_move_y_iconnect))
+                      #print ("Get Y "+int_opp_move_y)
                   except Exception as e:
                     print(e)
 
@@ -293,9 +312,11 @@ def iConnect_StartGame(ip,sock,InvitedOpponent):
                   self.collisionDetection()
 
             def update_opponent(self):
-                  global opp_mass_iconnect
-                  self.move_opponent(sock)
-                  self.collisionDetection_opponent()
+                global opp_mass_iconnect
+                self.move_opponent(sock)
+                #self.mass = opp_mass_iconnect
+                print ('Opp mass from update opponent of ICOnnect'+str(opp_mass_iconnect))
+                #self.get_opponent_data() #get data from opponent -eg. movement, name etc.
 
             def collisionDetection(self):
                 global gameOver
@@ -311,27 +332,9 @@ def iConnect_StartGame(ip,sock,InvitedOpponent):
                     if(getDistance((venus_cell.x,venus_cell.y),(self.x,self.y)) <= 15):
                         #self.mass+=0.5
                         gameRunning = False
-                        print("ME COLLIDE WITH Venus")
+                        print("COLLIDE WITH Venus")
                         game_over()
 
-            def collisionDetection_opponent(self):
-                global gameOver
-                global gameRunning
-                
-                for cell in cell_list:
-                    if(getDistance((cell.x,cell.y),(self.x,self.y)) <= self.mass/2):
-                        self.mass+=0.5
-                        #my_mass = self.mass
-                        cell_list.remove(cell)
-
-                for venus_cell in venus_cell_list:
-                    if(getDistance((venus_cell.x,venus_cell.y),(self.x,self.y)) <= 15):
-                        #self.mass+=0.5
-                        gameRunning = False
-                        print("OPPONENT COLLIDE WITH Venus")
-                        game_over_opponent()
-                        
-##### SEND GET ICONNECT DATA While moving######
 
             def move(self):
 
@@ -359,7 +362,7 @@ def iConnect_StartGame(ip,sock,InvitedOpponent):
                     my_move_y = self.y
                     my_mass = self.mass
                     my_score = int(blob.mass*2)
-                    my_move_coord = str(my_move_x)+","+str(my_move_y)+","+str(my_mass)+","+str(my_score)+","
+                    my_move_coord = str(my_move_x)+","+str(my_move_y)+","+str(my_mass)+","+str(my_score)
 
                     iConnect_sock.send(my_move_coord.encode('ascii')) # send my position to Opponent
 
@@ -396,12 +399,12 @@ def iConnect_StartGame(ip,sock,InvitedOpponent):
                 y = cam.y
                 
                 
-                if(score >= 50 and score > 20):
+                if(score >= 100 and score > 50):
                     image = pygame.transform.scale(frog_image,(int(self.mass*6),int(self.mass*6)))
                     image.set_colorkey((0,0,0))
                     self.surface.blit(image,(int(self.x*cam.zoom+cam.x-size_expand),int(self.y*cam.zoom+cam.y-size_expand)))
                     #pygame.draw.circle(self.surface,col3,(int(self.x*cam.zoom+cam.x-8),int(self.y*cam.zoom+cam.y-8)),int(self.mass/2*zoom))
-                elif(score >= 20 and score < 50):
+                elif(score >= 50 and score < 100):
                     image = pygame.transform.scale(tadpole_image,(int(self.mass*6),int(self.mass*6)))
                     image.set_colorkey((0,0,0))
                     self.surface.blit(image,(int(self.x*cam.zoom+cam.x-size_expand),int(self.y*cam.zoom+cam.y-size_expand)))
@@ -426,12 +429,12 @@ def iConnect_StartGame(ip,sock,InvitedOpponent):
                 col2 = (34,34,34)
                 col3 = (0,178,0)            
                 
-                if(score_Opponent >= 50 and score_Opponent > 20):
+                if(score_Opponent >= 100 and score_Opponent > 50):
                     image = pygame.transform.scale(frog_image,(int(opp_mass_iconnect*6),int(opp_mass_iconnect*6)))
                     image.set_colorkey((0,0,0))
                     self.surface.blit(image,(int(self.x*cam.zoom+cam.x-size_expand),int(self.y*cam.zoom+cam.y-size_expand)))
                     #pygame.draw.circle(self.surface,col3,(int(self.x*cam.zoom+cam.x-8),int(self.y*cam.zoom+cam.y-8)),int(self.mass/2*zoom))
-                elif(score_Opponent >= 20 and score_Opponent < 50):
+                elif(score_Opponent >= 50 and score_Opponent < 100):
                     image = pygame.transform.scale(tadpole_image,(int(opp_mass_iconnect*6),int(opp_mass_iconnect*6)))
                     image.set_colorkey((0,0,0))
                     self.surface.blit(image,(int(self.x*cam.zoom+cam.x-size_expand),int(self.y*cam.zoom+cam.y-size_expand)))
@@ -465,7 +468,6 @@ def iConnect_StartGame(ip,sock,InvitedOpponent):
 
         class Cell:
             def __init__(self,surface):
-            
                 self.x = Cells_x #random.randint(20,1980)
                 self.y = Cells_y #random.randint(20,1980)
                 self.mass = 10 #2
@@ -476,25 +478,15 @@ def iConnect_StartGame(ip,sock,InvitedOpponent):
                 pygame.draw.circle(self.surface,self.color,(int((self.x*cam.zoom+cam.x)),int(self.y*cam.zoom+cam.y)),int(self.mass*cam.zoom))
 
         def spawn_cells(numOfCells):
-            global Cells_x
-            global Cells_y
-
-            
-            for i in Cells_coord_arr: #for i in range(numOfCells): this is the orig code
-
-                Cells_x = i[0]
-                Cells_y = i[1]
-                
+            for i in range(numOfCells):
                 cell = Cell(surface)
                 cell_list.append(cell)
-
-                #print(str(Cells_x)+" XXXXXXXXXXXX "+ str(Cells_y))
 
 
         class venus_Cell:
             def __init__(self,surface):
-                self.x = Venus_x
-                self.y = Venus_y
+                self.x = random.randint(20,1980)
+                self.y = random.randint(20,1980)
                 self.mass = 15
                 self.surface = surface
                 self.color = (255,38,255)
@@ -503,19 +495,9 @@ def iConnect_StartGame(ip,sock,InvitedOpponent):
                 pygame.draw.circle(self.surface,self.color,(int((self.x*cam.zoom+cam.x)),int(self.y*cam.zoom+cam.y)),int(self.mass*cam.zoom))
 
         def spawn_venus_Cells(numOfCells):
-            global Venus_x
-            global Venus_y
-
-            
-            for i in Venus_coord_arr: #for i in range(numOfCells): this is the orig code
-
-                Venus_x = i[0]
-                Venus_y = i[1]
-                
+            for i in range(numOfCells):
                 venus_cell = venus_Cell(surface)
                 venus_cell_list.append(venus_cell)
-
-                #print(str(Cells_x)+" XXXXXXXXXXXX "+ str(Cells_y))
 
         def draw_grid():
             for i in range(0,2001,20):
@@ -531,47 +513,37 @@ def iConnect_StartGame(ip,sock,InvitedOpponent):
             surface.blit(pygame.transform.scale(t_surface,(w,h)),(20,screen_height-30))
             surface.blit(t_lb_surface,(screen_width-160,35))
             
-            surface.blit(big_font.render("Scoreboard",0,(255,255,255)),(screen_width-157,20))
-            drawText("Opponent: "+ opp_score_iconnect,(screen_width-157,20+25))
+            surface.blit(big_font.render("Leaderboard",0,(255,255,255)),(screen_width-157,20))
+            drawText("Opponent: "+ str(opp_score_iconnect),(screen_width-157,20+25))
             drawText("My score: "+ str(int(blob.mass*2)),(screen_width-157,20+25*2))
+            #drawText(str(int(blob.mass*2)),(screen_width-157,20+25*11))
+            #drawText("My Score: "+str(int(blob.mass*2)),(screen_width-157,20+25*11))
 
-
-        def game_over_opponent():
+            #score = int(blob.mass*2)
             
-                  surface.blit(game_over_font.render("YOU WIN!",10,(255,255,255)),(screen_width/2-120, screen_height/2-20))
-                  pygame.display.flip()
-                  gameRunning = False
-
-                  if messagebox.askyesno("Game Over!","Invite player to play again?"):
-                        gameRunning = True
-                  else:
-                        messagebox.showinfo("Exit Game","This will exit the game in 3 seconds...")
-                        time.sleep(3)
-                        pygame.quit()
+            #if(score >= 15):
+            #    drawText("10. My Player",(screen_width-157,20+25*10))
+            #else:
+            #    drawText("10. Player 10",(screen_width-157,20+25*10),(210,0,0))
 
         def game_over():
-            
-                  surface.blit(game_over_font.render("YOU LOSE!",10,(255,255,255)),(screen_width/2-120, screen_height/2-20))
-                  pygame.display.flip()
-                  gameRunning = False
-
-                  if messagebox.askyesno("Game Over!","Invite player to play again?"):
-                        gameRunning = True
-                  else:
-                        messagebox.showinfo("Exit Game","This will exit the game in 3 seconds...")
-                        time.sleep(3)
-                        pygame.quit()
-
+            #global gameRunning
+            #drawText_size("GAME OVER",(screen_width/2, screen_height/4))
+            surface.blit(game_over_font.render("GAME OVER",10,(255,255,255)),(screen_width/2-120, screen_height/2-20))
+            pygame.display.flip()
+            gameRunning = False
+            time.sleep(5)
+            pygame.quit()
 
         # INITIALIZE SETTING
         camera = Camera()
         blob = Player(surface,alias)
         Opponent = Player(surface,InvitedOpponent)
-        spawn_cells(100)
+        spawn_cells(2)
 
        
         #spawn_Enemy(1)
-        spawn_venus_Cells(2) #venus playtrap numbers
+        spawn_venus_Cells(1) #venus playtrap numbers
 
         
       # start receiving/sending data from the opponents
@@ -600,7 +572,7 @@ def iConnect_StartGame(ip,sock,InvitedOpponent):
             blob.update()
             #Enemy.update()
             Opponent.update_opponent()
-            camera.zoom = 1 #updated for steady zoom - recommeneded is 5
+            camera.zoom = .5 #updated for steady zoom - recommeneded is 5
 
             #camera.centre(blob2)
             camera.centre(blob)
@@ -643,7 +615,7 @@ def StartGame(ip,sock,OpponentNamePass):
         colors_cells = [(80,252,54),(36,244,255),(243,31,46),(4,39,243),(254,6,178),(255,211,7),(216,6,254),(145,255,7),(7,255,182),(255,6,86),(147,7,255)]
         colors_viruses = [(66,254,71)]
         screen_width, screen_height = (1200,800)
-        surface = pygame.display.set_mode((1280,655))
+        surface = pygame.display.set_mode((1200,800))
         #surface = pygame.display.set_mode((0,0), pygame.FULLSCREEN)
         t_surface = pygame.Surface((95,25),pygame.SRCALPHA) #transparent rect for score
         t_lb_surface = pygame.Surface((200,278),pygame.SRCALPHA) # WIDTH, HEIGHT of transparent rect for leaderboard box
@@ -694,6 +666,27 @@ def StartGame(ip,sock,OpponentNamePass):
 
             return ((diffX**2)+(diffY**2))**(0.5)
 
+##### SEND GET StartGame DATA #######
+
+        def send_opponent_data_StartGame(name,sock): # send player data to opponent
+                global alias
+                global my_move_x
+                global my_move_y
+                #StartGame_my_sock = sock
+
+                #MyMove = "Helllooooo" #my_move_x,my_move_y
+                while 1:
+                  try:
+                    while 1:
+                        my_move_x_str = str(my_move_x)
+                        my_move_y_str = str(my_move_y)
+                        #OpponentPlayer.send(my_move_x_str.encode('ascii')+b","+ my_move_y_str.encode('ascii'))
+                        OpponentPlayer.send(my_move_x_str.encode('ascii'))
+                        #StartGame_my_sock.send(my_move_y_str.encode('ascii'))
+                        #print("***********************************")
+                  except Exception as e:
+                    print(e)
+
 
         def get_opponent_data_StartGame(name,sock):
 
@@ -714,11 +707,11 @@ def StartGame(ip,sock,OpponentNamePass):
                       #OpponentMouseCoordinate = str(data.decode('ascii'))
                       #print("Getting OPPONENT DATA from GameStarted of 2 def "+str(data.decode('ascii')))
                       
-                      OpponentMouseCoordinate = str(data.decode('ascii')).split(",")
-                      opp_move_x_StartGame = float(OpponentMouseCoordinate[0])
-                      opp_move_y_StartGame = float(OpponentMouseCoordinate[1])
-                      opp_mass_StartGame = float(OpponentMouseCoordinate[2])
-                      opp_score_StartGame = OpponentMouseCoordinate[3]
+                      OpponentMouseCoordinate = str(data.decode('ascii')).strip()
+                      opp_move_x_StartGame = float(OpponentMouseCoordinate.split(",")[0])
+                      opp_move_y_StartGame = float(OpponentMouseCoordinate.split(",")[1])
+                      opp_mass_StartGame = float(OpponentMouseCoordinate.split(",")[2])
+                      opp_score_StartGame = OpponentMouseCoordinate.split(",")[3]
                       
                       #opp_move_x = float(int_opp_move_x)
                       #opp_move_y = float(int_opp_move_y)
@@ -769,11 +762,10 @@ def StartGame(ip,sock,OpponentNamePass):
                   self.collisionDetection()
 
             def update_opponent(self):
-                  global opp_mass_StartGame                
-                  self.move_opponent(sock)
-                  self.collisionDetection_opponent()
-                  #self.mass = opp_mass_StartGame USE COLLISION DETECTION HERE...
-                  #print ('Opp mass from update opponent of StartGame '+str(opp_mass_StartGame))
+                global opp_mass_StartGame                
+                self.move_opponent(sock)
+                #self.mass = opp_mass_StartGame USE COLLISION DETECTION HERE...
+                print ('Opp mass from update opponent of StartGame '+str(opp_mass_StartGame))
 
             def collisionDetection(self):
                 global gameOver
@@ -792,29 +784,10 @@ def StartGame(ip,sock,OpponentNamePass):
                         game_over()
 
 
-            def collisionDetection_opponent(self):
-                global gameOver
-                global gameRunning
-                
-                for cell in cell_list:
-                    if(getDistance((cell.x,cell.y),(self.x,self.y)) <= self.mass/2):
-                        self.mass+=0.5
-                        #my_mass = self.mass
-                        cell_list.remove(cell)
-
-                for venus_cell in venus_cell_list:
-                    if(getDistance((venus_cell.x,venus_cell.y),(self.x,self.y)) <= 15):
-                        #self.mass+=0.5
-                        gameRunning = False
-                        print("OPPONENT COLLIDE WITH Venus")
-                        game_over_opponent()
-
-##### SEND GET StartGame DATA while moving #######
-                        
             def move(self):
                 global my_move_x
                 global my_move_y
-                global OpponentPlayer
+                #global StartGame_sock
              
                 if (gameRunning!=False):
 
@@ -831,11 +804,11 @@ def StartGame(ip,sock,OpponentNamePass):
                     self.x += vx
                     self.y += vy
 
-                    my_move_x = self.x
                     my_move_y = self.y
+                    my_move_x = self.x
                     my_mass = self.mass
                     my_score = int(blob.mass*2)
-                    my_move_coord = str(my_move_x)+","+str(my_move_y)+","+str(my_mass)+","+str(my_score)+","
+                    my_move_coord = str(my_move_x)+","+str(my_move_y)+","+str(my_mass)+","+str(my_score)
                     #print("StartGame My Score Is "+str(my_score))
 
                     #try:                    
@@ -874,12 +847,12 @@ def StartGame(ip,sock,OpponentNamePass):
                 y = cam.y
                 
                 
-                if(score >= 50 and score > 20):
+                if(score >= 100 and score > 50):
                     image = pygame.transform.scale(frog_image,(int(self.mass*6),int(self.mass*6)))
                     image.set_colorkey((0,0,0))
                     self.surface.blit(image,(int(self.x*cam.zoom+cam.x-size_expand),int(self.y*cam.zoom+cam.y-size_expand)))
                     #pygame.draw.circle(self.surface,col3,(int(self.x*cam.zoom+cam.x-8),int(self.y*cam.zoom+cam.y-8)),int(self.mass/2*zoom))
-                elif(score >= 20 and score < 50):
+                elif(score >= 50 and score < 100):
                     image = pygame.transform.scale(tadpole_image,(int(self.mass*6),int(self.mass*6)))
                     image.set_colorkey((0,0,0))
                     self.surface.blit(image,(int(self.x*cam.zoom+cam.x-size_expand),int(self.y*cam.zoom+cam.y-size_expand)))
@@ -904,12 +877,12 @@ def StartGame(ip,sock,OpponentNamePass):
                 col2 = (34,34,34)
                 col3 = (0,178,0)            
                 
-                if(score_Opponent >= 50 and score_Opponent > 20):
+                if(score_Opponent >= 100 and score_Opponent > 50):
                     image = pygame.transform.scale(frog_image,(int(opp_mass_StartGame*6),int(opp_mass_StartGame*6)))
                     image.set_colorkey((0,0,0))
                     self.surface.blit(image,(int(self.x*cam.zoom+cam.x-size_expand),int(self.y*cam.zoom+cam.y-size_expand)))
                     #pygame.draw.circle(self.surface,col3,(int(self.x*cam.zoom+cam.x-8),int(self.y*cam.zoom+cam.y-8)),int(self.mass/2*zoom))
-                elif(score_Opponent >= 20 and score_Opponent < 50):
+                elif(score_Opponent >= 50 and score_Opponent < 100):
                     image = pygame.transform.scale(tadpole_image,(int(opp_mass_StartGame*6),int(opp_mass_StartGame*6)))
                     image.set_colorkey((0,0,0))
                     self.surface.blit(image,(int(self.x*cam.zoom+cam.x-size_expand),int(self.y*cam.zoom+cam.y-size_expand)))
@@ -944,7 +917,6 @@ def StartGame(ip,sock,OpponentNamePass):
 
         class Cell:
             def __init__(self,surface):
-
                 self.x = Cells_x #random.randint(20,1980)
                 self.y = Cells_y #random.randint(20,1980)
                 self.mass = 10 #2
@@ -955,21 +927,15 @@ def StartGame(ip,sock,OpponentNamePass):
                 pygame.draw.circle(self.surface,self.color,(int((self.x*cam.zoom+cam.x)),int(self.y*cam.zoom+cam.y)),int(self.mass*cam.zoom))
 
         def spawn_cells(numOfCells):
-            global Cells_x
-            global Cells_y
-            
-            for i in Cells_coord_arr: #for i in range(numOfCells): this is the orig code
-
-                Cells_x = i[0]
-                Cells_y = i[1]
-                
+            for i in range(numOfCells):
                 cell = Cell(surface)
                 cell_list.append(cell)
 
+
         class venus_Cell:
             def __init__(self,surface):
-                self.x = Venus_x
-                self.y = Venus_y
+                self.x = random.randint(20,1980)
+                self.y = random.randint(20,1980)
                 self.mass = 15
                 self.surface = surface
                 self.color = (255,38,255)
@@ -978,15 +944,7 @@ def StartGame(ip,sock,OpponentNamePass):
                 pygame.draw.circle(self.surface,self.color,(int((self.x*cam.zoom+cam.x)),int(self.y*cam.zoom+cam.y)),int(self.mass*cam.zoom))
 
         def spawn_venus_Cells(numOfCells):
-            global Venus_x
-            global Venus_y
-
-            
-            for i in Venus_coord_arr: #for i in range(numOfCells): this is the orig code
-
-                Venus_x = i[0]
-                Venus_y = i[1]
-                
+            for i in range(numOfCells):
                 venus_cell = venus_Cell(surface)
                 venus_cell_list.append(venus_cell)
 
@@ -1004,36 +962,26 @@ def StartGame(ip,sock,OpponentNamePass):
             surface.blit(pygame.transform.scale(t_surface,(w,h)),(20,screen_height-30))
             surface.blit(t_lb_surface,(screen_width-160,35))
             
-            surface.blit(big_font.render("Scoreboard",0,(255,255,255)),(screen_width-157,20))
-            drawText("Opponent: "+ opp_score_StartGame,(screen_width-157,20+25))
+            surface.blit(big_font.render("Leaderboard",0,(255,255,255)),(screen_width-157,20))
+            drawText("Opponent: "+ str(opp_score_StartGame),(screen_width-157,20+25))
             drawText("My score: "+ str(int(blob.mass*2)),(screen_width-157,20+25*2))
+            #drawText("My Score: "+ str(int(blob.mass*2)),(screen_width-157,20+25*11))
 
-
-        def game_over_opponent():
+            #score = int(blob.mass*2)
             
-                  surface.blit(game_over_font.render("YOU WIN!",10,(255,255,255)),(screen_width/2-120, screen_height/2-20))
-                  pygame.display.flip()
-                  gameRunning = False
-
-                  if messagebox.askyesno("Game Over!","Invite player to play again?"):
-                        gameRunning = True
-                  else:
-                        messagebox.showinfo("Exit Game","This will exit the game in 3 seconds...")
-                        time.sleep(3)
-                        pygame.quit()
+            #if(score >= 15):
+             #   drawText("10. My Player",(screen_width-157,20+25*10))
+            #else:
+             #   drawText("10. Player 10",(screen_width-157,20+25*10),(210,0,0))
 
         def game_over():
-            
-                  surface.blit(game_over_font.render("YOU LOSE!",10,(255,255,255)),(screen_width/2-120, screen_height/2-20))
-                  pygame.display.flip()
-                  gameRunning = False
-
-                  if messagebox.askyesno("Game Over!","Invite player to play again?"):
-                        gameRunning = True
-                  else:
-                        messagebox.showinfo("Exit Game","This will exit the game in 3 seconds...")
-                        time.sleep(3)
-                        pygame.quit()
+            #global gameRunning
+            #drawText_size("GAME OVER",(screen_width/2, screen_height/4))
+            surface.blit(game_over_font.render("GAME OVER",10,(255,255,255)),(screen_width/2-120, screen_height/2-20))
+            pygame.display.flip()
+            gameRunning = False
+            time.sleep(5)
+            pygame.quit()
 
 
 
@@ -1041,9 +989,9 @@ def StartGame(ip,sock,OpponentNamePass):
         camera = Camera()
         blob = Player(surface,alias)
         Opponent = Player(surface,OpponentName)
-        spawn_cells(100)
+        spawn_cells(2)
         #spawn_Enemy(1)
-        spawn_venus_Cells(2) #venus playtrap numbers
+        spawn_venus_Cells(1) #venus playtrap numbers
 
         
         # start receiving/sending data from the opponents
@@ -1073,7 +1021,7 @@ def StartGame(ip,sock,OpponentNamePass):
             blob.update()
             #Enemy.update()
             Opponent.update_opponent()
-            camera.zoom = 1 #updated for steady zoom - recommeneded is 5
+            camera.zoom = .5 #updated for steady zoom - recommeneded is 5
 
             #camera.centre(blob2)
             camera.centre(blob)
@@ -1095,8 +1043,7 @@ def StartGame(ip,sock,OpponentNamePass):
             pygame.display.flip()
 
 ####END Frog game Code
-
-
+ 
 #Opponent position when I ask connection
 opp_move_x_iconnect = 0
 opp_move_y_iconnect = 0
@@ -1110,18 +1057,12 @@ opp_mass_iconnect = 5
 opp_mass_StartGame = 5
 
 #Opponent scoring
-opp_score_iconnect = ""
-opp_score_StartGame = ""
+opp_score_iconnect = 0
+opp_score_StartGame = 0
 
-#Cells and venus position initialise and will be gathered from the server
+#Cells position initialise and will be gathered from the server
 Cells_x = 0
 Cells_y = 0
-
-Venus_x = 0
-Venus_y = 0
-
-Cells_coord_arr = []
-Venus_coord_arr = []
         
 #GUI Begin
 free_port = get_free_tcp_port() # free port to be used for new instance of the game
@@ -1189,7 +1130,7 @@ print ("------------------------------------------------------------------")
 @Pyro4.expose
 class StartGame_As_Opponent():
       def ask_connection(self,ip,OpponentNamePass):
-        #print("this is the ip"+ip)
+        print("this is the ip"+ip)
         OpponentName = OpponentNamePass
         if messagebox.askyesno("Accept","Accept invitation to join game?"):
                   global free_port

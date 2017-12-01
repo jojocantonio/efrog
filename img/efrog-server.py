@@ -22,30 +22,16 @@ def ShowMsgFromMe():  # display my message to the chat area
 def SendMsgToClients(name,):
   #alias = "Server"
   #Servermessage = entryMessage.get()
-  Cell_coord = []
-  Venus_coord = []
+  i=0
+  while i!=2: #execute 2 times
+    i = i+1
+    Cell_x = random.randint(20,1980)
+    Cell_y = random.randint(20,1980)
+    Cell_coord = "Coord,"+str(Cell_x)+","+str(Cell_y)
+    print(Cell_coord)
 
-  for i in range(0,100): #specify the number of cells to display
-    #Cell_x = random.randint(20,1980)
-    #Cell_y = random.randint(20,1980)
-    Cell_coord.append([random.randint(20,1980),random.randint(20,1980)])
-
-  for i in range(0,10): #specify the number of cells to display
-    #Cell_x = random.randint(20,1980)
-    #Cell_y = random.randint(20,1980)
-    Venus_coord.append([random.randint(20,1980),random.randint(20,1980)])
-
-  print(str(Cell_coord))
-  print("############################################################################################# \n")
-  print(str(Venus_coord))
-
-  Cell_coord_str = "Cell_Coord:"+str(Cell_coord)
-  Venus_coord_str = "Venus_Coord:"+str(Venus_coord)
-
-  for allClient in allClients:
-        s.sendto(Cell_coord_str.encode('ascii'), allClient)
-  for allClient in allClients:
-        s.sendto(Venus_coord_str.encode('ascii'), allClient)
+    for allClient in allClients:
+        s.sendto(Cell_coord.encode('ascii'), allClient)
 
 def SendMsgToClients_and_ShowMsgFromMe():
   SendMsgToClients()
